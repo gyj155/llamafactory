@@ -11,7 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 import os
 from typing import TYPE_CHECKING, Any, Optional, TypedDict
 
@@ -128,7 +127,7 @@ def load_config(model_args: "ModelArguments") -> "PretrainedConfig":
     return AutoConfig.from_pretrained(model_args.model_name_or_path, **init_kwargs)
 
 
-def load_model(
+def load_model( #here
     tokenizer: "PreTrainedTokenizer",
     model_args: "ModelArguments",
     finetuning_args: "FinetuningArguments",
@@ -156,7 +155,7 @@ def load_model(
         if model_args.mixture_of_depths == "load":
             model = load_mod_pretrained_model(**init_kwargs)
         else:
-            if type(config) in AutoModelForImageTextToText._model_mapping.keys():  # image-text
+            if type(config) in AutoModelForImageTextToText._model_mapping.keys():  # image-text here
                 load_class = AutoModelForImageTextToText
             elif type(config) in AutoModelForVision2Seq._model_mapping.keys():  # image-text
                 load_class = AutoModelForVision2Seq
@@ -166,11 +165,29 @@ def load_model(
                 load_class = AutoModelForTextToWaveform
             else:
                 load_class = AutoModelForCausalLM
-
             if model_args.train_from_scratch:
                 model = load_class.from_config(config, trust_remote_code=model_args.trust_remote_code)
             else:
-                model = load_class.from_pretrained(**init_kwargs)
+                use_custom_vision = getattr(model_args, "use_custom_vision", False)
+                is_qwen3_vl = getattr(config, "model_type", None) == "qwen3_vl"
+                
+                if use_custom_vision and is_qwen3_vl:
+                    # Use local modified Qwen3VL implementation
+                    from .qwen3_vl.modeling_qwen3_vl import Qwen3VLForConditionalGeneration as CustomQwen3VL
+                    logger.info_rank0("Loading custom Qwen3VL from local folder (with modifiable visual features)...")
+                    model = CustomQwen3VL.from_pretrained(**init_kwargs)
+                    # Print the actual file path being used
+                    import inspect
+                    model_file = inspect.getfile(type(model.model))
+                    logger.info_rank0(f"✓ Custom Qwen3VL loaded from: {model_file}")
+                else:
+                    model = load_class.from_pretrained(**init_kwargs)
+                    # original model path
+                    if is_qwen3_vl:
+                        import inspect
+                        model_file = inspect.getfile(type(model.model))
+                        logger.info_rank0(f"ℹ Original Qwen3VL loaded from: {model_file}")
+                # exit()
                 if getattr(model.config, "model_type", None) in ["qwen2_5_omni", "qwen3_omni_moe"]:
                     model = getattr(model, "thinker")
 
