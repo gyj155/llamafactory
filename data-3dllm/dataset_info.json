@@ -1,0 +1,17 @@
+{
+  "merged_training_data": {
+    "file_name": "merged_training_data.json",
+    "formatting": "sharegpt",
+    "columns": {
+      "messages": "messages",
+      "images": "images",
+      "metadata": "metadata"
+    },
+    "tags": {
+    "role_tag": "role",
+    "content_tag": "content",
+    "user_tag": "user",
+    "assistant_tag": "assistant"
+    }
+    }
+  }

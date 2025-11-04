@@ -176,7 +176,6 @@ def load_model( #here
                     from .qwen3_vl.modeling_qwen3_vl import Qwen3VLForConditionalGeneration as CustomQwen3VL
                     logger.info_rank0("Loading custom Qwen3VL from local folder (with modifiable visual features)...")
                     model = CustomQwen3VL.from_pretrained(**init_kwargs)
-                    # Print the actual file path being used
                     import inspect
                     model_file = inspect.getfile(type(model.model))
                     logger.info_rank0(f"✓ Custom Qwen3VL loaded from: {model_file}")
@@ -187,7 +186,6 @@ def load_model( #here
                         import inspect
                         model_file = inspect.getfile(type(model.model))
                         logger.info_rank0(f"ℹ Original Qwen3VL loaded from: {model_file}")
-                # exit()
                 if getattr(model.config, "model_type", None) in ["qwen2_5_omni", "qwen3_omni_moe"]:
                     model = getattr(model, "thinker")
 

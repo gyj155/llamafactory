@@ -18,6 +18,7 @@
 from typing import TYPE_CHECKING, Optional
 
 from ...data import SFTDataCollatorWith4DAttentionMask, get_dataset, get_template_and_fix_tokenizer
+from ...data.collator_3d import DataCollatorFor3DVision
 from ...extras.constants import IGNORE_INDEX
 from ...extras.logging import get_logger
 from ...extras.misc import calculate_tps
@@ -51,19 +52,51 @@ def run_sft(
     dataset_module = get_dataset(template, model_args, data_args, training_args, stage="sft", **tokenizer_module)
     model = load_model(tokenizer, model_args, finetuning_args, training_args.do_train)
 
+    # Configure 3D features if enabled
+    if data_args.use_3d_features:
+        logger.info(f"Configuring model for 3D feature processing with method: {data_args.feature_processing_method}")
+        model.config.use_3d_features = True
+        model.config.feature_processing_method = data_args.feature_processing_method
+        if data_args.position_encoding_dim is not None:
+            model.config.position_encoding_dim = data_args.position_encoding_dim
+        else:
+            model.config.position_encoding_dim = model.config.text_config.hidden_size
+        
+        # Reinitialize the feature processor with updated config
+        if hasattr(model, 'model') and hasattr(model.model, 'feature_processor_3d'):
+            from ...model.qwen3_vl.feature_processing_3d import get_feature_processor
+            model.model.feature_processor_3d = get_feature_processor(model.config)
+            logger.info("3D feature processor initialized successfully")
+
     if getattr(model, "is_quantized", False) and not training_args.do_train:
         setattr(model, "_hf_peft_config_loaded", True)  # hack here: make model compatible with prediction
 
-    data_collator = SFTDataCollatorWith4DAttentionMask(
-        template=template,
-        model=model if not training_args.predict_with_generate else None,
-        pad_to_multiple_of=8 if training_args.do_train else None,  # for shift short attention
-        label_pad_token_id=IGNORE_INDEX if data_args.ignore_pad_token_for_loss else tokenizer.pad_token_id,
-        block_diag_attn=model_args.block_diag_attn,
-        attn_implementation=getattr(model.config, "_attn_implementation", None),
-        compute_dtype=model_args.compute_dtype,
-        **tokenizer_module,
-    )
+    # Use custom 3D collator if 3D features are enabled
+    if data_args.use_3d_features:
+        logger.info("Using DataCollatorFor3DVision for 3D feature processing")
+        data_collator = DataCollatorFor3DVision(
+            template=template,
+            model=model if not training_args.predict_with_generate else None,
+            pad_to_multiple_of=8 if training_args.do_train else None,
+            label_pad_token_id=IGNORE_INDEX if data_args.ignore_pad_token_for_loss else tokenizer.pad_token_id,
+            block_diag_attn=model_args.block_diag_attn,
+            attn_implementation=getattr(model.config, "_attn_implementation", None),
+            compute_dtype=model_args.compute_dtype,
+            data_args=data_args,
+            data_dir=data_args.dataset_dir,
+            **tokenizer_module,
+        )
+    else:
+        data_collator = SFTDataCollatorWith4DAttentionMask(
+            template=template,
+            model=model if not training_args.predict_with_generate else None,
+            pad_to_multiple_of=8 if training_args.do_train else None,  # for shift short attention
+            label_pad_token_id=IGNORE_INDEX if data_args.ignore_pad_token_for_loss else tokenizer.pad_token_id,
+            block_diag_attn=model_args.block_diag_attn,
+            attn_implementation=getattr(model.config, "_attn_implementation", None),
+            compute_dtype=model_args.compute_dtype,
+            **tokenizer_module,
+        )
 
     # Metric utils
     metric_module = {}

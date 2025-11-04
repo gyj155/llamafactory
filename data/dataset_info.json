@@ -1,4 +1,7 @@
 {
+  "merged_training_data": {
+    "file_name": "merged_training_data.json"
+  },
   "identity": {
     "file_name": "identity.json"
   },

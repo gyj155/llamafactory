@@ -137,6 +137,18 @@ class DataArguments:
         default=False,
         metadata={"help": "Whether or not to use a shared file system for the datasets."},
     )
+    use_3d_features: bool = field(
+        default=False,
+        metadata={"help": "Whether to use 3D features (depth, world coordinates) for training."},
+    )
+    feature_processing_method: str = field(
+        default="base",
+        metadata={"help": "Method for processing 3D features. Options: 'base', 'sin3d_pe', 'mlp_pe'."},
+    )
+    position_encoding_dim: Optional[int] = field(
+        default=None,
+        metadata={"help": "Dimension of positional encoding for 3D features. Defaults to hidden_size if None."},
+    )
 
     def __post_init__(self):
         def split_arg(arg):

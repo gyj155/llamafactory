@@ -6,6 +6,12 @@ result.json
 # C extensions
 *.so
 
+data-3dllm/embodiedscan
+data-3dllm/metadata
+data-3dllm/processed
+data-3dllm/posed_images
+data-3dllm/merged_training_data.json
+data-3dllm/scene_metadata.pkl
 # Distribution / packaging
 .Python
 build/

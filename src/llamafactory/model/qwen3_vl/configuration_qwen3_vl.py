@@ -238,6 +238,12 @@ class Qwen3VLConfig(PretrainedConfig):
             The end token index to encode the image prompt.
         tie_word_embeddings (`bool`, *optional*, defaults to `False`):
             Whether to tie the word embeddings.
+        use_3d_features (`bool`, *optional*, defaults to `False`):
+            Whether to use 3D features (depth, world coordinates) for enhanced scene understanding.
+        feature_processing_method (`str`, *optional*, defaults to `"base"`):
+            Method for processing 3D features. Options: "base" (no processing), "sin3d_pe" (sinusoidal 3D positional encoding), "mlp_pe" (MLP-based positional encoding).
+        position_encoding_dim (`int`, *optional*, defaults to `text_config.hidden_size`):
+            Dimension of positional encoding for 3D features.
 
     ```python
     >>> from transformers import Qwen3VLForConditionalGeneration, Qwen3VLConfig
@@ -265,6 +271,10 @@ class Qwen3VLConfig(PretrainedConfig):
         vision_start_token_id=151652,
         vision_end_token_id=151653,
         tie_word_embeddings=False,
+        # 3D feature processing parameters
+        use_3d_features=False,
+        feature_processing_method="base",
+        position_encoding_dim=None,
         **kwargs,
     ):
         if isinstance(vision_config, dict):
@@ -281,6 +291,12 @@ class Qwen3VLConfig(PretrainedConfig):
         self.video_token_id = video_token_id
         self.vision_start_token_id = vision_start_token_id
         self.vision_end_token_id = vision_end_token_id
+        
+        # 3D feature processing configuration
+        self.use_3d_features = use_3d_features
+        self.feature_processing_method = feature_processing_method
+        self.position_encoding_dim = position_encoding_dim if position_encoding_dim is not None else self.text_config.hidden_size
+        
         super().__init__(**kwargs, tie_word_embeddings=tie_word_embeddings)
 
 

@@ -12,6 +12,12 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""
+🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨
+don't change this file
+real operating code is at qwen3_vl/modeling_qwen3_vl.py
+🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨
+"""
 """PyTorch Qwen3-VL model."""
 
 from typing import Callable, Optional, Union
